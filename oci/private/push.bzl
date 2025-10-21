@@ -167,9 +167,6 @@ _attrs = {
         """,
         allow_single_file = True,
     ),
-    "_allowlist_function_transition": attr.label(
-        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-    ),
     "_crane": attr.label(
         default = "@oci_crane_toolchains//:current_toolchain",
         cfg = "exec",
@@ -190,8 +187,8 @@ def _quote_args(args):
     return ["\"{}\"".format(arg) for arg in args]
 
 def _impl(ctx):
-    crane = ctx.attr._crane[0][platform_common.ToolchainInfo]
-    jq = ctx.attr._jq[0][platform_common.ToolchainInfo]
+    crane = ctx.attr._crane[platform_common.ToolchainInfo]
+    jq = ctx.attr._jq[platform_common.ToolchainInfo]
 
     if ctx.attr.repository and ctx.attr.repository_file:
         fail("must specify exactly one of 'repository_file' or 'repository'")
