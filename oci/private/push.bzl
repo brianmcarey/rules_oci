@@ -140,23 +140,6 @@ multirun(
 [rules_multirun]: https://github.com/keith/rules_multirun
 """
 
-# Helper rule for ensuring that the crane and yq toolchains are actually
-# resolved for the architecture we are targeting.
-def _transition_to_target_impl(settings, _attr):
-    return {
-        # String conversion is needed to prevent a crash with Bazel 6.x.
-        "//command_line_option:extra_execution_platforms": [
-            str(platform)
-            for platform in settings["//command_line_option:platforms"]
-        ],
-    }
-
-_transition_to_target = transition(
-    implementation = _transition_to_target_impl,
-    inputs = ["//command_line_option:platforms"],
-    outputs = ["//command_line_option:extra_execution_platforms"],
-)
-
 _attrs = {
     "image": attr.label(
         allow_single_file = True,
@@ -184,12 +167,9 @@ _attrs = {
         """,
         allow_single_file = True,
     ),
-    "_allowlist_function_transition": attr.label(
-        default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-    ),
     "_crane": attr.label(
-        cfg = _transition_to_target,
         default = "@oci_crane_toolchains//:current_toolchain",
+        cfg = "exec",
     ),
     "_push_sh_tpl": attr.label(
         default = "push.sh.tpl",
@@ -198,8 +178,8 @@ _attrs = {
     "_runfiles": attr.label(default = "@bazel_tools//tools/bash/runfiles"),
     "_windows_constraint": attr.label(default = "@platforms//os:windows"),
     "_jq": attr.label(
-        cfg = _transition_to_target,
         default = "@jq_toolchains//:resolved_toolchain",
+        cfg = "exec",
     ),
 }
 
@@ -207,8 +187,8 @@ def _quote_args(args):
     return ["\"{}\"".format(arg) for arg in args]
 
 def _impl(ctx):
-    crane = ctx.attr._crane[0][platform_common.ToolchainInfo]
-    jq = ctx.attr._jq[0][platform_common.ToolchainInfo]
+    crane = ctx.attr._crane[platform_common.ToolchainInfo]
+    jq = ctx.attr._jq[platform_common.ToolchainInfo]
 
     if not ctx.file.image.is_directory:
         fail("image attribute must be a oci_image or oci_image_index")
